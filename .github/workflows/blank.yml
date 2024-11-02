@@ -1,9 +1,9 @@
 name: Require Members Approval
 
 on:
-  pull_request:
-  pull_request_review:
-    types: [editted, submitted]
+  push:
+    branches: [master, main]
+  
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,5 +17,5 @@ jobs:
       - name: Request review based on files changes and/or groups the author belongs to
         uses: creotiv/custom-approval-management@v0.0.4
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           config: .github/custom_approval.yml # Config file location override

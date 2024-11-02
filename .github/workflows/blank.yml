@@ -24,15 +24,6 @@ jobs:
         with:
             approvers: U07TW3805ST,U07U7PSMCFP
             minimumApprovalCount: 1
-            baseMessagePayload: |
-              {
-                "text": "base messaage approve reuqest"
-              }
-            successMessagePayload: |
-              {
-                "text": "success messaage approve reuqest"
-              }
-            failMessagePayload: |
-              {
-                "text": "fail messaage approve reuqest"
-              }
+      - name: output test
+        run: |
+          echo "${{ steps.approval.outputs.mainMessageTs }} ${{steps.approval.outputs.replyMessageTs }}"

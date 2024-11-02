@@ -1,0 +1,30 @@
+teams:
+  dev-team:
+    members: # team members that can approve this PR
+      - creeram
+      - user2
+      - user3
+      - user4
+    required: 1 # required number of members for approval
+
+  qa-team: 
+    members: # team members that can approve this PR
+      - user1
+      - user2
+      - user3
+      - user4
+    required: 4 # required number of members for approval
+
+  product-team:
+    members: # team members that can approve this PR
+      - user1
+      - user2
+      - user3
+      - user4
+    required: 1 # required number of members for approval
+
+  other-team:
+    members: # team members that can approve this PR
+      - user1
+      - user2
+    required: 1 # required number of members for approval

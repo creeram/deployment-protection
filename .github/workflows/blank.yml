@@ -10,12 +10,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  require_members_approval:
-    name: Require Members Approval
+  approval:
     runs-on: ubuntu-latest
     steps:
-      - name: Request review based on files changes and/or groups the author belongs to
-        uses: creotiv/custom-approval-management@v0.0.4
+      - name: send approval
+        uses: TigerWest/slack-approval@v1.0.1
+        env:
+          SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        timeout-minutes: 10
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          config: .github/custom_approval.yml # Config file location override
+            approvers: U07TW3805ST,user2
+            minimumApprovalCount: 1
+            baseMessagePayload: |
+              {}
+            successMessagePayload: |
+              {}
+            failMessagePayload: |
+              {}

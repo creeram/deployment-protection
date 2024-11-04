@@ -23,7 +23,7 @@ jobs:
         timeout-minutes: 10
         with:
             approvers: U07TW3805ST,U07U7PSMCFP
-            minimumApprovalCount: 1
+            minimumApprovalCount: 2
       - name: output test
         run: |
           echo "${{ steps.approval.outputs.mainMessageTs }} ${{steps.approval.outputs.replyMessageTs }}"

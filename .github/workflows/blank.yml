@@ -22,7 +22,7 @@ jobs:
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         timeout-minutes: 10
         with:
-            approvers: D07U40WFXSS,U07U7PSMCFP
+            approvers: U07TW3805ST,U07U7PSMCFP
             minimumApprovalCount: 1
       - name: output test
         run: |

@@ -1,0 +1,25 @@
+name: Build test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  
+    approval:
+        runs-on: self-hosted
+        timeout-minutes: 15
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                #token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+                ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+                repository: 'smein-org/slack-workflow-approval'
+                ref: 'v0.0.2'
+                path: ./slack-workflow-approval
+            - name: List files in repository root
+              run: ls -al
+
+      # To list files in a specific directory, specify the path
+            - name: List files in a specific directory
+              run: ls -al ./slack-workflow-approval

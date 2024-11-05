@@ -6,7 +6,7 @@ on:
 jobs:
   
     approval:
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
             - name: Checkout

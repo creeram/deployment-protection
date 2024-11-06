@@ -22,6 +22,7 @@ jobs:
                 repository: 'smein-org/slack-workflow-approval'
                 ref: 'v0.0.2'
                 path: ./slack-workflow-approval
+                persist-credentials: false
             - name: List files in repository root
               run: ls -al
 

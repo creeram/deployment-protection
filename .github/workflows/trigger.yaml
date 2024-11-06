@@ -21,7 +21,7 @@ jobs:
                 token: ${{ steps.app-token.outputs.token }}
                 repository: 'creeram/flux-upgrade'
                 ref: '0.0.1'
-                path: ./slack-workflow-approval
+                path: ./flux-upgrade
                 persist-credentials: false
             - name: List files in repository root
               run: ls -al

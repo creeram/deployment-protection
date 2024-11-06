@@ -19,8 +19,8 @@ jobs:
               uses: actions/checkout@v4
               with:
                 token: ${{ steps.app-token.outputs.token }}
-                repository: 'smein-org/slack-workflow-approval'
-                ref: 'v0.0.2'
+                repository: 'creeram/flux-upgrade'
+                # ref: 'v0.0.2'
                 path: ./slack-workflow-approval
                 persist-credentials: false
             - name: List files in repository root

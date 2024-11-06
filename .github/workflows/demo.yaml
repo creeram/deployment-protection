@@ -11,14 +11,14 @@ env:
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
-    if: ${{ (startsWith(env.TAG_NAME, 'v') || startsWith(env.TAG_NAME, 'V')) && !endsWith(env.TAG_NAME, '.0') }}  # Runs for all tags except when patch version is 0
+    if:  (startsWith(${{ env.TAG_NAME }}, 'v') || startsWith(${{ env.TAG_NAME }}, 'V')) && !endsWith(${{ env.TAG_NAME }}, '.0')  # Runs for all tags except when patch version is 0
     steps:
       - name: Deploy to Development
         run: echo "Deploying to Development Environment"
 
   deploy-prod:
     runs-on: ubuntu-latest
-    if: ${{ (startsWith(env.TAG_NAME, 'v') || startsWith(env.TAG_NAME, 'V')) && endsWith(env.TAG_NAME, '.0') }} # Runs only when patch version is 0
+    if: (startsWith(${{ env.TAG_NAME }}, 'v') || startsWith(${{ env.TAG_NAME }}, 'V')) && endsWith(${{ env.TAG_NAME }}, '.0') # Runs only when patch version is 0
     steps:
       - name: Deploy to Production
         run: echo "Deploying to Production Environment"

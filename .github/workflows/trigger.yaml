@@ -9,11 +9,16 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
+            - uses: actions/create-github-app-token@v1
+              id: app-token
+              with:
+                # required
+                app-id: ${{ vars.APP_ID }}
+                private-key: ${{ secrets.PRIVATE_KEY }}
             - name: Checkout
               uses: actions/checkout@v4
               with:
-                #token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-                ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+                token: ${{ steps.app-token.outputs.token }}
                 repository: 'smein-org/slack-workflow-approval'
                 ref: 'v0.0.2'
                 path: ./slack-workflow-approval

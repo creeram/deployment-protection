@@ -11,14 +11,16 @@ env:
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V') }} && ${{ !endsWith(github.ref_name, '.0') }}  # Runs for all tags except when patch version is 0
+    # if: ${{ startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V') }} && ${{ !endsWith(github.ref_name, '.0') }}  # Runs for all tags except when patch version is 0
+    if: ${{ (startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V')) && !endsWith(github.ref_name, '.0') }}
     steps:
       - name: Deploy to Development
         run: echo "Deploying to Development Environment"
 
   deploy-prod:
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V') }} && ${{ endsWith(github.ref_name, '.0') }} # Runs only when patch version is 0
+    if: ${{ (startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V')) && endsWith(github.ref_name, '.0') }}
+    # if: ${{ startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'V') }} && ${{ endsWith(github.ref_name, '.0') }} # Runs only when patch version is 0
     steps:
       - name: Deploy to Production
         run: echo "Deploying to Production Environment"

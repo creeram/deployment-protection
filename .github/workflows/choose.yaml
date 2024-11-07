@@ -1,0 +1,40 @@
+name: Use Production Version In Staging/Rollback To Staging Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Select release type for patching ImagePolicy"
+        required: true
+        type: choice
+        options:
+          - use_prod_tag
+          - use_stage_tag
+
+jobs:
+  patch-imagepolicy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/
+
+      - name: Apply ImagePolicy Patch
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [[ "${{ github.event.inputs.release_type }}" == "use_prod_tag" ]]; then
+            # Use the production ImagePolicy secret
+            IMAGE_POLICY="${{ secrets.IMAGE_POLICY_PROD }}"
+          elif [[ "${{ github.event.inputs.release_type }}" == "use_stage_tag" ]]; then
+            # Use the staging ImagePolicy secret
+            IMAGE_POLICY="${{ secrets.IMAGE_POLICY_STAGE }}"
+          fi
+
+          # Apply the selected ImagePolicy
+          echo "$IMAGE_POLICY" | kubectl apply -f -

@@ -56,7 +56,7 @@ jobs:
               imageRepositoryRef:
                 name: plinko-client
               filterTags:
-                pattern: '^(branch-[^.]*)\.(?P<timestamp>\d{14})$|^[vV](?P<version>\d+\.\d+\.\d+(-hotfix\.\d+)?)\.(?P<timestamp>\d{14
+                pattern: '^(branch-[^.]*)\.(?P<timestamp>\d{14})$|^[vV](?P<version>\d+\.\d+\.\d+(-hotfix\.\d+)?)\.(?P<timestamp>\d{14})$'
               policy:
                 alphabetical:
                   order: asc

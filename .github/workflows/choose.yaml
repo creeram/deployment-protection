@@ -25,7 +25,11 @@ jobs:
           mv kubectl /usr/local/bin/
       - name: Save Kubeconfig to file
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          echo "${{ secrets.KUBECONFIG }}" > .kubeconfig
+          set -xeuo pipefail
+          chmod 600 .kubeconfig
+          export KUBECONFIG=.kubeconfig
+          set -x
 
       - name: Apply ImagePolicy Patch
         run: |

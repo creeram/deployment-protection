@@ -1,4 +1,4 @@
-name: Change Deployment Staging
+name: Use Production Version In Staging/Rollback To Staging Version
 
 on:
   workflow_dispatch:

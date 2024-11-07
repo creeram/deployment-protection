@@ -1,0 +1,53 @@
+name: Patch Flux ImagePolicy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Select release type for patching ImagePolicy"
+        required: true
+        type: choice
+        options:
+          - use_prod_tag
+          - use_normal_release
+
+jobs:
+  patch-imagepolicy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Apply ImagePolicy Patch
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [[ "${{ github.event.inputs.release_type }}" == "use_prod_tag" ]]; then
+            cat <<EOF | kubectl apply -f -
+            apiVersion: image.toolkit.fluxcd.io/v1beta2
+            kind: ImagePolicy
+            metadata:
+              name: plinko-server
+              namespace: staging
+            spec:
+              imageRepositoryRef:
+                name: plinko-server
+              filterTags:
+                pattern: '^[vV](?P<major>\d+)\.(?P<minor>\d+)\.0(-hotfix\.\d+)?\.(?P<timestamp>\d{14})$'
+                extract: '${major}.${minor}.0'
+              policy:
+                semver:
+                  range: 'x.x.0'
+            EOF
+          elif [[ "${{ github.event.inputs.release_type }}" == "use_normal_release" ]]; then
+            cat <<EOF | kubectl apply -f -
+            apiVersion: image.toolkit.fluxcd.io/v1beta2
+            kind: ImagePolicy
+            metadata:
+              name: plinko-client
+              namespace: staging
+            spec:
+              imageRepositoryRef:
+                name: plinko-client
+              filterTags:
+                pattern: '^(branch-[^.]*)\.(?P<timestamp>\d{14})$|^[vV](?P<version>\d+\.\d+\.\d+(-hotfix\.\d+)?)\.(?P<timestamp>\d{14

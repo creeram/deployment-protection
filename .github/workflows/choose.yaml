@@ -1,4 +1,4 @@
-name: Patch Flux ImagePolicy
+name: Change Deployment Staging
 
 on:
   workflow_dispatch:

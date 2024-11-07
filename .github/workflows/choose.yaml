@@ -35,6 +35,9 @@ jobs:
             # Use the staging ImagePolicy secret
             IMAGE_POLICY="${{ secrets.IMAGE_POLICY_STAGE }}"
           fi
+          
+          echo "$IMAGE_POLICY" > /tmp/imagepolicy.yaml
 
-          # Apply the selected ImagePolicy
-          echo "$IMAGE_POLICY" | kubectl apply -f -
+          # Apply the ImagePolicy using kubectl
+          kubectl apply -f /tmp/imagepolicy.yaml
+          

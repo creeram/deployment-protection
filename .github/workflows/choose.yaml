@@ -23,10 +23,11 @@ jobs:
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           mv kubectl /usr/local/bin/
+      - name: Save Kubeconfig to file
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
       - name: Apply ImagePolicy Patch
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
           if [[ "${{ github.event.inputs.release_type }}" == "use_prod_tag" ]]; then
             # Use the production ImagePolicy secret

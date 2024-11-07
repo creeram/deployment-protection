@@ -9,7 +9,7 @@ on:
         type: choice
         options:
           - use_prod_tag
-          - use_normal_release
+          - use_stage_tag
 
 jobs:
   patch-imagepolicy:

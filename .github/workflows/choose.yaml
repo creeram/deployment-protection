@@ -27,11 +27,11 @@ jobs:
             apiVersion: image.toolkit.fluxcd.io/v1beta2
             kind: ImagePolicy
             metadata:
-              name: plinko-server
+              name: plinko-client
               namespace: staging
             spec:
               imageRepositoryRef:
-                name: plinko-server
+                name: plinko-client
               filterTags:
                 pattern: '^[vV](?P<major>\d+)\.(?P<minor>\d+)\.0(-hotfix\.\d+)?\.(?P<timestamp>\d{14})$'
                 extract: '${major}.${minor}.0'
@@ -51,3 +51,6 @@ jobs:
                 name: plinko-client
               filterTags:
                 pattern: '^(branch-[^.]*)\.(?P<timestamp>\d{14})$|^[vV](?P<version>\d+\.\d+\.\d+(-hotfix\.\d+)?)\.(?P<timestamp>\d{14
+              policy:
+                alphabetical:
+                  order: asc

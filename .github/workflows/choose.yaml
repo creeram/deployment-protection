@@ -60,3 +60,5 @@ jobs:
               policy:
                 alphabetical:
                   order: asc
+            EOF
+          fi

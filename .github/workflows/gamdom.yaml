@@ -1,0 +1,194 @@
+name: Build Docker and Helm SOK env
+
+on:
+  workflow_dispatch:
+
+env:
+  GITHUB_PR_NUMBER: ${{github.event.pull_request.number}}
+  GITHUB_BRANCH_NAME: ${{github.ref_name}}
+jobs:
+  get-variables:
+    runs-on: self-hosted-dind
+    steps:
+      - name: set branch
+        id: collect
+        run: |
+          # set to pr number if it's a pr, otherwise set to branch name
+          function trunc() {
+            echo "$1" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]' | cut -c 1-25 | sed -e 's/--*/-/g' | sed -e 's/-*$//'
+          }
+          if [ -z "$GITHUB_PR_NUMBER" ]; then
+              BRANCH="branch-$(trunc "$GITHUB_BRANCH_NAME")"
+          else
+            BRANCH="pr-$GITHUB_PR_NUMBER-$(trunc "$GITHUB_HEAD_REF")"
+          fi
+          echo "BRANCH=$BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+    outputs:
+      branch: ${{ steps.collect.outputs.branch }}
+  approval:
+    runs-on: self-hosted-dind
+    timeout-minutes: 15
+    needs:
+      - build-games
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          # required
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APPS_PRIVATE_KEY }}
+          repositories: |
+            slack-workflow-approval
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          #ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          repository: "smein-org/slack-workflow-approval"
+          ref: "v0.0.2"
+          path: ./slack-workflow-approval
+          persist-credentials: false
+      - name: send approval
+        uses: ./slack-workflow-approval
+        env:
+          SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID_NON_PROD }}
+          ENVIRONMENT: "E2E"
+#          URL: "https://staging.demo.com"
+        with:
+          approvers: U07K2KL00E6
+          minimumApprovalCount: 1
+  build-games:
+    timeout-minutes: 30
+    runs-on: self-hosted-dind
+    container:
+      image: gcr.io/kaniko-project/executor:debug
+
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        project:
+          - plinko
+          - keno
+    needs:
+      - build-games-helm-chart
+
+    steps:
+      - name: Build and Push Client with Kaniko
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
+        run: |
+          # Write Docker config for Kaniko
+          AUTH=$(echo -n ${{ secrets.HARBOR_USER }}:${{ secrets.HARBOR_PASSWORD }} | base64)
+          echo "{\"auths\": {\"harbor.teamgamdom.com\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
+
+
+          # Configure git
+          export GIT_USERNAME="kaniko-bot"
+          export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}"
+
+          # Build and push
+          /kaniko/executor \
+            --dockerfile=tools/docker/Dockerfile.client \
+            --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
+            --destination=harbor.teamgamdom.com/gamdom-game-integration/images/gamdom-game-${{ matrix.project }}-client:${{ env.BRANCH }} \
+            --build-arg GAME_NAME=${{ matrix.project }} \
+            --cache=true \
+            --cleanup
+      - name: Build and Push Server image
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
+        run: |
+          # Write Docker config for Kaniko
+          AUTH=$(echo -n ${{ secrets.HARBOR_USER }}:${{ secrets.HARBOR_PASSWORD }} | base64)
+          echo "{\"auths\": {\"harbor.teamgamdom.com\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
+
+          # Build and push 
+          /kaniko/executor \
+            --dockerfile=tools/docker/Dockerfile.server \
+            --context=/kaniko/buildcontext \
+            --destination=harbor.teamgamdom.com/gamdom-game-integration/images/gamdom-game-${{ matrix.project }}-server:${{ env.BRANCH }} \
+            --build-arg GAME_NAME=${{ matrix.project }} \
+            --cache=true \
+            --cleanup
+  deploy-game-sok:
+    runs-on: self-hosted-dind
+    needs:
+      - approval
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          # required
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APPS_PRIVATE_KEY }}
+          repositories: |
+            cluster-infrastructure
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          #ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          repository: "smein-org/cluster-infrastructure"
+          ref: "main"
+          persist-credentials: false
+      - name: Make changes for Plinko
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
+        run: |
+          sed -i "s|\(override_game_client_image:.*gamdom-game-plinko-client:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/plinko-instance.yaml
+          sed -i "s|\(override_game_server_image:.*gamdom-game-plinko-server:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/plinko-instance.yaml
+          cat apps/staging/stag-1/ns-staging/e2e/plinko-instance.yaml
+      - name: Make changes for Keno
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
+        run: |
+          sed -i "s|\(override_game_client_image:.*gamdom-game-keno-client:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/keno-instance.yaml
+          sed -i "s|\(override_game_server_image:.*gamdom-game-keno-server:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/keno-instance.yaml
+          cat apps/staging/stag-1/ns-staging/sok/keno-instance.yaml
+      - name: Make changes for Mines
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
+        run: |
+          sed -i "s|\(override_game_client_image:.*gamdom-game-mines-client:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/mines-instance.yaml
+          sed -i "s|\(override_game_server_image:.*gamdom-game-mines-server:\)[^ ]*|\1${BRANCH}|" apps/staging/stag-1/ns-staging/sok/mines-instance.yaml
+          cat apps/staging/stag-1/ns-staging/sok/mines-instance.yaml
+      - name: Push changes to git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git status
+
+  build-games-helm-chart:
+    timeout-minutes: 30
+    runs-on: self-hosted-dind
+    needs: get-variables
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Install git and curl # https://github.com/actions/runner/issues/3000
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git curl
+      - uses: actions/checkout@v3
+      - name: build helm chart
+        working-directory: ./tools/k8s
+        run: |
+          set -xeuo pipefail
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          # setting the branch as the version isn't really possible because it needs to be a semantic version https://helm.sh/docs/topics/registries/
+          CHART_VERSION=$(helm show chart ./game-chart | grep 'version:' | awk '{print $2}')
+          helm registry login harbor.teamgamdom.com  --username ${{ secrets.HARBOR_USER }} --password-stdin <<<${{ secrets.HARBOR_PASSWORD }}
+          helm package --version $CHART_VERSION --app-version $BRANCH game-chart
+          helm push gamdom-game-$CHART_VERSION.tgz oci://harbor.teamgamdom.com/gamdom-game-integration/helmcharts/games
+        env:
+          BRANCH: ${{ needs.get-variables.outputs.branch }}
